@@ -1,5 +1,5 @@
 import 'whatwg-fetch';
-import _ from 'lodash';
+import { startsWith } from 'lodash';
 
 /**
  * Parses the JSON returned by a network request
@@ -45,6 +45,14 @@ function formatQueryParams(params) {
     .join('&');
 }
 
+function serverRestartWatcher(response) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve(response);
+    }, 3000);
+  });
+}
+
 /**
  * Requests a URL, returning a promise
  *
@@ -53,7 +61,7 @@ function formatQueryParams(params) {
  *
  * @return {object}           The response data
  */
-export default function request(url, options) {
+export default function request(url, options, shouldWatchServerRestart = false) {
   const optionsObj = options || {};
 
   // Set headers
@@ -62,7 +70,7 @@ export default function request(url, options) {
   };
 
   // Add parameters to url
-  let urlFormatted = _.startsWith(url, '/')
+  let urlFormatted = startsWith(url, '/')
     ? `${Strapi.apiUrl}${url}`
     : url;
 
@@ -76,5 +84,14 @@ export default function request(url, options) {
     optionsObj.body = JSON.stringify(optionsObj.body);
   }
 
-  return fetch(urlFormatted, optionsObj).then(checkStatus).then(parseJSON);
+  return fetch(urlFormatted, optionsObj)
+    .then(checkStatus)
+    .then(parseJSON)
+    .then((response) => {
+      if (shouldWatchServerRestart) {
+        return serverRestartWatcher(response);
+      }
+
+      return response;
+    });
 }

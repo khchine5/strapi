@@ -4,8 +4,9 @@
  *
  */
 
-import _ from 'lodash';
 import React from 'react';
+import { startsWith } from 'lodash';
+import PropTypes from 'prop-types';
 import { FormattedMessage } from 'react-intl';
 import { Link } from 'react-router-dom';
 
@@ -15,13 +16,20 @@ class LeftMenuLink extends React.Component { // eslint-disable-line react/prefer
   render() {
     // We need to create our own active url checker,
     // because of the two levels router.
-    const isLinkActive = _.startsWith(window.location.pathname.replace('/admin', ''), this.props.destination);
+    const isLinkActive = startsWith(window.location.pathname.replace('/admin', ''), this.props.destination);
 
     return (
       <li className={styles.item}>
         <Link className={`${styles.link} ${isLinkActive ? styles.linkActive : ''}`} to={this.props.destination}>
           <i className={`${styles.linkIcon} fa-${this.props.icon} fa`}></i>
-          <FormattedMessage id={this.props.label} className={styles.linkLabel} />
+          <FormattedMessage
+            id={this.props.label}
+            defaultMessage='{label}'
+            values={{
+              label: this.props.label,
+            }}
+            className={styles.linkLabel}
+          />
         </Link>
       </li>
     );
@@ -29,9 +37,9 @@ class LeftMenuLink extends React.Component { // eslint-disable-line react/prefer
 }
 
 LeftMenuLink.propTypes = {
-  destination: React.PropTypes.string.isRequired,
-  icon: React.PropTypes.string.isRequired,
-  label: React.PropTypes.string.isRequired,
+  destination: PropTypes.string.isRequired,
+  icon: PropTypes.string.isRequired,
+  label: PropTypes.string.isRequired,
 };
 
 export default LeftMenuLink;

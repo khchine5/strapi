@@ -12,6 +12,7 @@ const { nestedConfigurations, appConfigurations, apis, middlewares, hooks } = re
 const initializeMiddlewares = require('./middlewares');
 const initializeHooks = require('./hooks');
 const { EventEmitter } = require('events');
+const stackTrace = require('stack-trace');
 
 /**
  * Construct an Strapi instance.
@@ -77,7 +78,7 @@ class Strapi extends EventEmitter {
     this.loadFile = utils.loadFile.bind(this);
   }
 
-  async start(cb) {
+  async start(config = {}, cb) {
     try {
       // Enhance app.
       await this.enhancer();
@@ -88,7 +89,7 @@ class Strapi extends EventEmitter {
       // Freeze object.
       await this.freeze();
       // Launch server.
-      this.server.listen(this.config.port, err => {
+      this.server.listen(config.port || this.config.port, err => {
         if (err) {
           console.log(err);
         }
@@ -138,16 +139,19 @@ class Strapi extends EventEmitter {
     // Destroy server and available connections.
     this.server.destroy();
 
-    if (cluster.isWorker && process.env.NODE_ENV === 'development' && get(this.config, 'currentEnvironment.server.autoReload') === true) process.send('stop');
+    if (cluster.isWorker && process.env.NODE_ENV === 'development' && get(this.config, 'currentEnvironment.server.autoReload.enabled') === true) {
+      process.send('stop');
+    }
 
     // Kill process.
     process.exit(0);
   }
 
   async load() {
-    strapi.app.use(async (ctx, next) => {
+    this.app.use(async (ctx, next) => {
       if (ctx.request.url === '/_health' && ctx.request.method === 'HEAD') {
-        ctx.set('strapi', 'heartbeat');
+        ctx.set('strapi', 'You are so French !');
+        ctx.status = 204;
       } else {
         await next();
       }
@@ -173,7 +177,7 @@ class Strapi extends EventEmitter {
 
   reload() {
     const reload = function() {
-      if (cluster.isWorker && process.env.NODE_ENV === 'development' && get(this.config, 'currentEnvironment.server.autoReload') === true) process.send('reload');
+      if (cluster.isWorker && process.env.NODE_ENV === 'development' && get(this.config, 'currentEnvironment.server.autoReload.enabled') === true) process.send('reload');
     };
 
     reload.isReloading = false;
@@ -233,6 +237,56 @@ class Strapi extends EventEmitter {
     return Object.keys(this).filter(x => !includes(propertiesToNotFreeze, x)).forEach(key => {
       Object.freeze(this[key]);
     });
+  }
+
+  query(entity) {
+    if (!entity) {
+      return this.log.error(`You can't call the query method without passing the model's name as a first argument.`);
+    }
+
+    const model = entity.toLowerCase();
+
+    if (!this.models.hasOwnProperty(model)) {
+      return this.log.error(`The model ${model} can't be found.`);
+    }
+
+    const connector = this.models[model].orm;
+
+    if (!connector) {
+      return this.log.error(`Impossible to determine the use ORM for the model ${model}.`);
+    }
+
+    // Get stack trace.
+    const stack = stackTrace.get()[1];
+    const file = stack.getFileName();
+    const method = stack.getFunctionName();
+
+    // Extract plugin path.
+    const pluginPath = file.indexOf('strapi-plugin-') !== -1 ?
+      file.split(path.sep).filter(x => x.indexOf('strapi-plugin-') !== -1)[0] :
+      undefined;
+
+    if (!pluginPath) {
+      return this.log.error('Impossible to find the plugin where `strapi.query` has been called.');
+    }
+
+    // Get plugin name.
+    const pluginName = pluginPath.replace('strapi-plugin-', '').toLowerCase();
+    const queries = get(this.plugins, `${pluginName}.config.queries.${connector}`);
+
+    if (!queries) {
+      return this.log.error(`There is no query available for the model ${model}.`);
+    }
+
+    // Bind queries with the current model to allow the use of `this`.
+    const bindQueries = Object.keys(queries).reduce((acc, current) => {
+      return acc[current] = queries[current].bind(this.models[model]), acc;
+    }, {});
+
+    // Send ORM to the called function.
+    bindQueries.orm = connector;
+
+    return bindQueries;
   }
 }
 

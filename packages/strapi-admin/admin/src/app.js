@@ -7,12 +7,12 @@
 import 'babel-polyfill';
 
 // Import all the third party stuff
+import { Provider } from 'react-redux';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
 import { ConnectedRouter } from 'react-router-redux';
 import createHistory from 'history/createBrowserHistory';
-import _ from 'lodash';
+import { merge, isFunction } from 'lodash';
 import 'sanitize.css/sanitize.css';
 import 'whatwg-fetch';
 
@@ -22,7 +22,6 @@ import App from 'containers/App';
 import { showNotification } from 'containers/NotificationProvider/actions';
 import { pluginLoaded, updatePlugin } from 'containers/App/actions';
 
-import { plugins } from '../../config/admin.json';
 import configureStore from './store';
 import { translationMessages, languages } from './i18n';
 
@@ -79,14 +78,37 @@ window.onload = function onLoad() {
  * @param params
  */
 const registerPlugin = (plugin) => {
-  const formattedPlugin = plugin;
-
   // Merge admin translation messages
-  _.merge(translationMessages, formattedPlugin.translationMessages);
+  merge(translationMessages, plugin.translationMessages);
 
-  formattedPlugin.leftMenuSections = formattedPlugin.leftMenuSections || [];
+  plugin.leftMenuSections = plugin.leftMenuSections || [];
 
-  store.dispatch(pluginLoaded(formattedPlugin));
+  switch (true) {
+    // Execute bootstrap function and check if plugin can be rendered
+    case isFunction(plugin.bootstrap) && isFunction(plugin.pluginRequirements):
+      plugin.pluginRequirements(plugin)
+        .then(plugin => {
+          return plugin.bootstrap(plugin);
+        })
+        .then(plugin => {
+          store.dispatch(pluginLoaded(plugin));
+        });
+      break;
+    // Check if plugin can be rendered
+    case isFunction(plugin.pluginRequirements):
+      plugin.pluginRequirements(plugin).then(plugin => {
+        store.dispatch(pluginLoaded(plugin));
+      })
+      break;
+    // Execute bootstrap function
+    case isFunction(plugin.bootstrap):
+      plugin.bootstrap(plugin).then(plugin => {
+        store.dispatch(pluginLoaded(plugin));
+      });
+      break;
+    default:
+      store.dispatch(pluginLoaded(plugin));
+  }
 };
 
 const displayNotification = (message, status) => {
@@ -116,7 +138,7 @@ window.Strapi = {
   apiUrl,
   refresh: (pluginId) => ({
     translationMessages: (translationMessagesUpdated) => {
-      render(_.merge({}, translationMessages, translationMessagesUpdated));
+      render(merge({}, translationMessages, translationMessagesUpdated));
     },
     leftMenuSections: (leftMenuSectionsUpdated) => {
       store.dispatch(updatePlugin(pluginId, 'leftMenuSections', leftMenuSectionsUpdated));
@@ -125,23 +147,6 @@ window.Strapi = {
   router: history,
   languages,
 };
-
-// Ping each plugins port defined in configuration
-if (window.location.hostname === 'localhost') {
-  plugins.ports.forEach(pluginPort => {
-    // Define plugin url
-    const pluginUrl = `http://localhost:${pluginPort}/main.js`;
-
-    // Check that the server in running
-    fetch(pluginUrl)
-      .then(() => {
-        // Inject `script` tag in DOM
-        const script = window.document.createElement('script');
-        script.src = pluginUrl;
-        window.document.body.appendChild(script);
-      });
-  });
-}
 
 const dispatch = store.dispatch;
 export {

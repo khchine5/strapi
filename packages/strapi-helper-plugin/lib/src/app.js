@@ -13,6 +13,19 @@ import App from 'containers/App'; // eslint-disable-line
 import configureStore from './store';
 import { translationMessages } from './i18n';
 
+const tryRequire = (bootstrap = false) => {
+  try {
+    const config = bootstrap ? require('bootstrap').default : require('requirements').default;
+    return config;
+  } catch(err) {
+    return null;
+  }
+};
+
+const bootstrap = tryRequire(true);
+const pluginRequirements = tryRequire();
+
+
 // Plugin identifier based on the package.json `name` value
 const pluginPkg = require('../../../../package.json');
 const pluginId = pluginPkg.name.replace(
@@ -27,7 +40,6 @@ const router = window.Strapi.router;
 // Create redux store with Strapi admin history
 const store = configureStore({}, window.Strapi.router);
 
-
 // Define the plugin root component
 function Comp(props) {
   return (
@@ -36,11 +48,6 @@ function Comp(props) {
     </Provider>
   );
 }
-
-// Add contextTypes to get access to the admin router
-Comp.contextTypes = {
-  router: React.PropTypes.object.isRequired.isRequired,
-};
 
 // Hot reloadable translation json files
 if (module.hot) {
@@ -58,7 +65,7 @@ if (module.hot) {
   });
 }
 
-// Register the plugin
+// Register the plugin.
 window.Strapi.registerPlugin({
   name: pluginPkg.strapi.name,
   icon: pluginPkg.strapi.icon,
@@ -66,8 +73,12 @@ window.Strapi.registerPlugin({
   leftMenuLinks: [],
   mainComponent: Comp,
   translationMessages,
+  bootstrap,
+  pluginRequirements,
+  preventComponentRendering: false,
+  blockerComponent: null,
+  blockerComponentProps: {},
 });
-
 
 // Export store
 export { store, apiUrl, pluginId, pluginName, pluginDescription, router };
