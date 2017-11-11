@@ -21,13 +21,13 @@ export function checkFormValidity(formData, formValidations, formErrors) {
         if (data.nestedValidations) {
           forEach(data.nestedValidations, (nestedData) => {
             if (nestedData.target === key) valueValidations = nestedData;
-          })
+          });
         }
       });
     }
 
     // If section is disabled don't need further checks
-    if (includes(key, 'enabled') && !value) return false;
+    if (includes(key, 'enabled') && !value || !valueValidations) return false;
 
     forEach(valueValidations.nestedValidations, (nestedValidations) => {
       if (nestedValidations.validations.required && !has(formData, nestedValidations.target)) {
@@ -125,7 +125,7 @@ export function getInputsValidationsFromConfigs(configs) {
               }
             }
           });
-          formValidations.push(validations)
+          formValidations.push(validations);
         } else {
           formValidations.push(validations);
         }
