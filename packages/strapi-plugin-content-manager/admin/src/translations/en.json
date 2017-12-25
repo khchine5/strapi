@@ -10,10 +10,11 @@
   "containers.Edit.returnList": "Return to list",
   "containers.List.addAnEntry": "Add New {entity}",
   "containers.List.pluginHeaderDescription": "{label} entries found",
+  "containers.List.pluginHeaderDescription.singular": "{label} entry found",
   "components.LimitSelect.itemsPerPage": "Items per page",
   "containers.List.errorFetchRecords": "Error",
 
-  "emptyAttributes.title": "There is no fields yet",
+  "emptyAttributes.title": "There are no fields yet",
   "emptyAttributes.description": "Add your first field to your Content Type",
   "emptyAttributes.button": "Go to content type builder",
 
@@ -36,6 +37,8 @@
   "error.attribute.key.taken": "This value already exists",
   "error.attribute.sameKeyAndName": "Can't be equals",
   "error.validation.minSupMax": "Can't be superior",
+
+  "notification.error.relationship.fetch": "An error occurred during relationship fetch.",
 
   "success.record.delete": "Deleted",
   "success.record.save": "Saved",

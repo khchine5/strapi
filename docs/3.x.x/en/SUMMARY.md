@@ -27,6 +27,8 @@
 * [Responses](guides/responses.md)
 * [Routing](guides/routing.md)
 * [Services](guides/services.md)
+* [Authentification](guides/authentification.md)
+* [Deployment](guides/deployment.md)
 
 ### Plugins
 * [Quick start](plugins/quick-start.md)

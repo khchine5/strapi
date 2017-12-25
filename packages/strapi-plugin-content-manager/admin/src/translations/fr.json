@@ -11,6 +11,7 @@
   "containers.Edit.returnList": "Retourner à la liste",
   "containers.List.addAnEntry": "Ajouter {entity}",
   "containers.List.pluginHeaderDescription": "{label} entrées trouvées",
+  "containers.List.pluginHeaderDescription.singular": "{label} entrée trouvée",
   "components.LimitSelect.itemsPerPage": "Éléments par page",
   "containers.List.errorFetchRecords": "Erreur",
 
@@ -37,6 +38,8 @@
   "error.attribute.key.taken": "Cette valeur existe déjà",
   "error.attribute.sameKeyAndName": "Ne peuvent pas être égaux",
   "error.validation.minSupMax": "Ne peut pas être plus grand",
+
+  "notification.error.relationship.fetch": "Une erreur est survenue en récupérant les relations.",
 
   "success.record.delete": "Supprimé",
   "success.record.save": "Sauvegardé",

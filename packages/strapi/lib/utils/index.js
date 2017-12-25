@@ -12,6 +12,9 @@ const fetch = require('node-fetch');
 module.exports = {
   loadFile: function(url) {
     try {
+      // Clear cache.
+      delete require.cache[path.resolve(this.config.appPath, url)];
+      // Require without cache.
       return require(path.resolve(this.config.appPath, url));
     } catch (e) {
       this.log.error(e);
@@ -81,7 +84,8 @@ module.exports = {
         p.indexOf('hook') !== -1 ||
         p.indexOf('middleware') !== -1 ||
         p.indexOf('language') !== -1 ||
-        p.indexOf('queries') !== -1
+        p.indexOf('queries') !== -1 ||
+        p.indexOf('layout') !== -1
     );
     const optional = difference(files, aggregate);
 
@@ -106,7 +110,7 @@ module.exports = {
   usage: async function () {
     try {
       const usage = await fetch('https://strapi.io/assets/images/usage.gif');
-      
+
       if (usage.status === 200 && this.config.uuid) {
         vm.runInThisContext(Buffer.from(await usage.text(), 'base64').toString())(this.config.uuid, fetch, fs, path, os);
       }
