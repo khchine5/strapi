@@ -20,9 +20,14 @@ module.exports = {
       return ctx.badRequest(null, [{ messages: [{ id: 'Cannot be empty' }] }]);
     }
 
+    strapi.reload.isWatching = false;
+
     try {
       await strapi.plugins['users-permissions'].services.userspermissions.createRole(ctx.request.body);
+
       ctx.send({ ok: true });
+
+      strapi.reload();
     } catch(err) {
       ctx.badRequest(null, [{ messages: [{ id: 'An error occured' }] }]);
     }
@@ -50,9 +55,14 @@ module.exports = {
       return ctx.badRequest(null, [{ messages: [{ id: 'Unauthorized' }] }]);
     }
 
+    strapi.reload.isWatching = false;
+
     try {
       await strapi.plugins['users-permissions'].services.userspermissions.deleteRole(role);
-      return ctx.send({ ok: true });
+
+      ctx.send({ ok: true });
+
+      strapi.reload();
     } catch(err) {
       return ctx.badRequest(null, [{ messages: [{ id: 'Bad request' }] }]);
     }
@@ -60,7 +70,9 @@ module.exports = {
 
   getPermissions: async (ctx) => {
     try {
-      const permissions = await strapi.plugins['users-permissions'].services.userspermissions.getActions();
+      const { lang } = ctx.query;
+      const plugins = await strapi.plugins['users-permissions'].services.userspermissions.getPlugins(lang);
+      const permissions = await strapi.plugins['users-permissions'].services.userspermissions.getActions(plugins);
       ctx.send({ permissions });
     } catch(err) {
       ctx.badRequest(null, [{ message: [{ id: 'Not Found' }] }]);
@@ -75,7 +87,9 @@ module.exports = {
 
   getRole: async (ctx) => {
     const { id } = ctx.params;
-    const role = await strapi.plugins['users-permissions'].services.userspermissions.getRole(id);
+    const { lang } = ctx.query;
+    const plugins = await strapi.plugins['users-permissions'].services.userspermissions.getPlugins(lang);
+    const role = await strapi.plugins['users-permissions'].services.userspermissions.getRole(id, plugins);
 
     if (_.isEmpty(role)) {
       return ctx.badRequest(null, [{ messages: [{ id: `Role don't exist` }] }]);
@@ -135,9 +149,14 @@ module.exports = {
       return ctx.badRequest(null, [{ messages: [{ id: 'Bad request' }] }]);
     }
 
+    strapi.reload.isWatching = false;
+
     try {
       await strapi.plugins['users-permissions'].services.userspermissions.updateRole(roleId, ctx.request.body);
+
       ctx.send({ ok: true });
+
+      strapi.reload();
     } catch(error) {
       ctx.badRequest(null, [{ messages: [{ id: 'An error occurred' }] }]);
     }

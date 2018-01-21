@@ -13,7 +13,7 @@ module.exports = {
   loadFile: function(url) {
     try {
       // Clear cache.
-      delete require.cache[path.resolve(this.config.appPath, url)];
+      delete require.cache[require.resolve(path.resolve(this.config.appPath, url))];
       // Require without cache.
       return require(path.resolve(this.config.appPath, url));
     } catch (e) {
@@ -78,14 +78,14 @@ module.exports = {
     const aggregate = files.filter(
       p =>
         intersection(p.split('/').map(p => p.replace('.json', '')), ['environments', 'database', 'security', 'request', 'response', 'server']).length === 2 ||
-        p.indexOf('functions') !== -1 ||
+        ((p.indexOf('functions') !== -1 ||
         p.indexOf('policies') !== -1 ||
         p.indexOf('locales') !== -1 ||
         p.indexOf('hook') !== -1 ||
         p.indexOf('middleware') !== -1 ||
         p.indexOf('language') !== -1 ||
         p.indexOf('queries') !== -1 ||
-        p.indexOf('layout') !== -1
+        p.indexOf('layout') !== -1) && p.indexOf('api') === -1)
     );
     const optional = difference(files, aggregate);
 

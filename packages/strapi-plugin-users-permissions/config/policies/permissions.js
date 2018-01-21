@@ -10,24 +10,28 @@ module.exports = async (ctx, next) => {
 
       ctx.state.user = await strapi.plugins['users-permissions'].services.user.fetch(_.pick(tokenUser, ['_id', 'id']));
 
-      if (!ctx.state.user) {
-        ctx.unauthorized('This user doesn\'t exit.');
-      }
-
-      role = ctx.state.user.role;
-
-      if (role.toString() === '0') {
-        return await next();
-      }
     } catch (err) {
       return ctx.unauthorized(err);
     }
+
+    if (!ctx.state.user) {
+      return ctx.unauthorized('This user doesn\'t exit.');
+    }
+
+    role = ctx.state.user.role;
+
+    if (role.toString() === '0') {
+      return await next();
+    }
   }
 
-  const permission = _.get(strapi.plugins['users-permissions'].config, ['roles', role.toString(), 'permissions', route.plugin || 'application', 'controllers', route.controller, route.action]);
+  const actions = _.get(strapi.plugins['users-permissions'].config, ['roles', role.toString(), 'permissions', route.plugin || 'application', 'controllers', route.controller], {});
+  const permission = _.find(actions, (config, name) => {
+    return name.toLowerCase() === route.action.toLowerCase();
+  });
 
   if (!permission) {
-    return await next();
+    return ctx.unauthorized('Access restricted for this action.');
   }
 
   if (permission.enabled && permission.policy) {

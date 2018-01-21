@@ -17,7 +17,13 @@ import { Switch, Route } from 'react-router-dom';
 import { get, includes, isFunction, map, omit } from 'lodash';
 
 import { pluginLoaded, updatePlugin } from 'containers/App/actions';
-import { selectHasUserPlugin, selectPlugins } from 'containers/App/selectors';
+import {
+  makeSelectBlockApp,
+  makeSelectShowGlobalAppBlocker,
+  selectHasUserPlugin,
+  selectPlugins,
+} from 'containers/App/selectors';
+
 import { hideNotification } from 'containers/NotificationProvider/actions';
 
 // Design
@@ -25,11 +31,12 @@ import ComingSoonPage from 'containers/ComingSoonPage';
 import Content from 'containers/Content';
 import Header from 'components/Header/index';
 import HomePage from 'containers/HomePage';
-// import InstallPluginPage from 'containers/InstallPluginPage';
+import InstallPluginPage from 'containers/InstallPluginPage';
 import LeftMenu from 'containers/LeftMenu';
 import ListPluginsPage from 'containers/ListPluginsPage';
 import Logout from 'components/Logout';
 import NotFoundPage from 'containers/NotFoundPage';
+import OverlayBlocker from 'components/OverlayBlocker';
 import PluginPage from 'containers/PluginPage';
 
 import auth from 'utils/auth';
@@ -123,13 +130,14 @@ export class AdminPage extends React.Component { // eslint-disable-line react/pr
               <Route path="/plugins/:pluginId" component={PluginPage} />
               <Route path="/plugins" component={ComingSoonPage} />
               <Route path="/list-plugins" component={ListPluginsPage} exact />
-              <Route path="/install-plugin" component={ComingSoonPage} exact />
+              <Route path="/install-plugin" component={InstallPluginPage} exact />
               <Route path="/configuration" component={ComingSoonPage} exact />
               <Route path="" component={NotFoundPage} />
               <Route path="404" component={NotFoundPage} />
             </Switch>
           </Content>
         </div>
+        <OverlayBlocker isOpen={this.props.blockApp && this.props.showGlobalAppBlocker} />
       </div>
     );
   }
@@ -149,17 +157,21 @@ AdminPage.defaultProps = {
 };
 
 AdminPage.propTypes = {
+  blockApp: PropTypes.bool.isRequired,
   hasUserPlugin: PropTypes.bool,
   history: PropTypes.object.isRequired,
   location: PropTypes.object.isRequired,
   pluginLoaded: PropTypes.func.isRequired,
   plugins: PropTypes.object.isRequired,
+  showGlobalAppBlocker: PropTypes.bool.isRequired,
   updatePlugin: PropTypes.func.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
+  blockApp: makeSelectBlockApp(),
   hasUserPlugin: selectHasUserPlugin(),
   plugins: selectPlugins(),
+  showGlobalAppBlocker: makeSelectShowGlobalAppBlocker(),
 });
 
 function mapDispatchToProps(dispatch) {
