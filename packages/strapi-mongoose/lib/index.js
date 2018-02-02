@@ -43,11 +43,14 @@ module.exports = function (strapi) {
         const { host, port, username, password, database } = _.defaults(connection.settings, strapi.config.hook.settings.mongoose);
 
         // Connect to mongo database
-        if (_.isEmpty(username) || _.isEmpty(password)) {
-          instance.connect(`mongodb://${host}:${port}/${database}`);
-        } else {
-          instance.connect(`mongodb://${username}:${password}@${host}:${port}/${database}`);
+        const connectOptions = {}
+        if (!_.isEmpty(username)) {
+          connectOptions.user = username
+          if (!_.isEmpty(password)) {
+            connectOptions.pass = password
+          }
         }
+        instance.connect(`mongodb://${host}:${port}/${database}`, connectOptions);
 
         // Handle error
         instance.connection.on('error', error => {
@@ -205,7 +208,7 @@ module.exports = function (strapi) {
                 const verbose = _.get(utilsModels.getNature(details, name, undefined, model.toLowerCase()), 'verbose') || '';
 
                 // Build associations key
-                utilsModels.defineAssociations(model, definition, details, name);
+                utilsModels.defineAssociations(model.toLowerCase(), definition, details, name);
 
                 if (_.isEmpty(verbose)) {
                   definition.loadedModel[name].type = utils(instance).convertType(details.type);
